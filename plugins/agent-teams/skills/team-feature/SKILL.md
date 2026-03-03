@@ -180,7 +180,7 @@ Task(
 )
 ```
 
-**You can also dispatch researchers mid-session** — when a coder gets stuck, when you need best practices for a decision, or when Tech Lead raises an architectural question.
+**You can dispatch researchers mid-session** — but ONLY when you genuinely lack information that isn't in your context (brief, .conventions/, Phase 1 findings). Do NOT dispatch a researcher for every STUCK or QUESTION signal — first check if you can answer from what you already know.
 
 #### Step 3: Classify complexity and synthesize plan
 
@@ -738,9 +738,9 @@ When things go wrong, handle it yourself — don't involve the user:
 
 | Situation | Action |
 |-----------|--------|
-| Coder reports STUCK | Dispatch a researcher to investigate the problem. Then: adjust the task, split it, or assign to a different coder. |
-| Coder reports REVIEW_LOOP (3+ review rounds on same task) | The problem is likely a misunderstanding between coder and reviewer. Dispatch a researcher to read the code and review feedback, then SendMessage to coder with a concrete fix. Do NOT tell the reviewer to accept — the code must actually be fixed. |
-| Tech Lead rejects architecture > 2 times | Review the disagreement yourself. If you need more context, dispatch a web researcher. Make the final call, document in DECISIONS.md. |
+| Coder reports STUCK | First, try to answer from your Phase 1 context. Only dispatch a researcher if the problem requires reading code you haven't seen. Then: adjust the task, split it, or assign to a different coder. |
+| Coder reports REVIEW_LOOP (3+ review rounds on same task) | The problem is likely a misunderstanding between coder and reviewer. First, try to resolve from context. Only dispatch a researcher if you need to read code + review feedback you don't have. SendMessage to coder with concrete fix. |
+| Tech Lead rejects architecture > 2 times | Review the disagreement yourself. Only dispatch a web researcher if you genuinely lack domain knowledge. Make the final call, document in DECISIONS.md. |
 | Coder escalates "pattern doesn't fit" | Forward to Tech Lead for decision. If Tech Lead unsure, dispatch a web researcher for best practices. Document decision in DECISIONS.md. |
 | Build/tests fail after all tasks | Create targeted fix tasks. Only fix what's broken, don't redo completed work. |
 | A coder goes idle unexpectedly | Send a message asking for status. If no response, shut down and spawn a replacement. |
@@ -753,12 +753,13 @@ When things go wrong, handle it yourself — don't involve the user:
 
 - **Full autonomy** — you make ALL decisions, never ask the user for clarification
 - **Protect your context** — dispatch researchers instead of reading files yourself. You receive findings, not raw search results. Exception: `.conventions/` gold standards are short and you read them yourself.
+- **Researchers are EXPENSIVE — use only when needed.** Before spawning ANY researcher, ask: "Do I already have this information in my context (from brief, .conventions/, or prior conversation)?" If yes — DO NOT spawn a researcher. Researchers are for filling genuine knowledge gaps, not a default reflex. Typical cases where researchers are NOT needed: brief already has project context, .conventions/ has gold standards, the coder's question can be answered from your Phase 1 knowledge.
 - **Gold standards in every coder prompt** — coders MUST receive canonical examples as few-shot context. This is the #1 lever for code quality (+15-40% accuracy vs instructions alone).
 - **Coders self-check before review** — coders run convention checks themselves (Step 4) before requesting review. Lead does NOT check.
 - **Escalation, not silent deviation** — when a pattern doesn't fit, coders escalate to Tech Lead, not silently deviate. Every approved deviation is documented in DECISIONS.md.
 - **Never implement tasks yourself** — you are the orchestrator only (delegate mode)
 - **One file = one coder** — never assign overlapping files to different coders
-- **Researchers before planning** — always dispatch researchers to understand the codebase before decomposing tasks
+- **Research only what you don't know** — see Step 2 decision algorithm. If brief/context already provides codebase info, skip codebase-researcher. If .conventions/ has gold standards, skip reference-researcher. Never dispatch researchers "just in case".
 - **Definition of Done** — define it from researcher findings + CLAUDE.md + conventions, include in DECISIONS.md
 - **Validate before executing** — Tech Lead reviews the plan before coders start (skip for SIMPLE tasks)
 - **Risk analysis before coding** — Tech Lead identifies risks, risk testers verify them, mitigations added to tasks BEFORE code is written (skip for SIMPLE tasks). Prevention > detection.
