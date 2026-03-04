@@ -15,6 +15,8 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
+  - Skill
+  - Edit
 argument-hint: "<description or path/to/plan.md> [--coders=N]"
 model: opus
 ---
@@ -288,6 +290,43 @@ Feature Definition of Done:
 ```
 
 You'll pass this DoD to Tech Lead for DECISIONS.md, and include it in task descriptions.
+
+**Write VERIFICATION_PLAN.md** — the verification checklist for automated post-implementation checks:
+
+```
+Write(".claude/teams/{team-name}/VERIFICATION_PLAN.md"):
+
+# Verification Plan
+## Feature: {feature name}
+
+## Build & Types
+- [ ] `{build command}` passes
+- [ ] `{typecheck command}` no errors
+
+## Tests
+- [ ] `{test command}` all pass
+
+## Browser Checks
+- [ ] Page {url} loads without console errors
+- [ ] {Element} is visible and clickable
+{add checks based on DoD + task acceptance criteria that involve UI}
+
+## Spec Checks
+- [ ] File `{path}` exists and exports `{symbol}`
+- [ ] {config/API/structural checks from acceptance criteria}
+
+## Human Checks
+- [ ] {Anything that can't be automated}
+  → {Step-by-step instructions for manual verification}
+```
+
+**How to populate sections:**
+- **Build & Types / Tests** — from researcher findings (build/test/lint commands)
+- **Browser Checks** — from DoD and task criteria that involve visible UI changes
+- **Spec Checks** — from task acceptance criteria (file existence, exports, API contracts, config values)
+- **Human Checks** — anything that requires human judgment (design quality, UX flow, business logic correctness)
+
+Sections are optional — omit empty sections. Section names are fixed keywords used for parsing by `/team-verify`.
 
 **Prepare gold standard context for coders:**
 
@@ -685,13 +724,58 @@ When all tasks are completed:
    - Go back to step 2 and run the conventions task. If it was never created → create it now and assign to a coder.
    - Feature cannot be declared COMPLETE without .conventions/ being created or updated.
 
-5. Shut down all permanent teammates:
+5. **Automated verification** via `/team-verify` (circuit breaker: max 3 iterations):
+
+   **5a. Check plan exists:**
+   ```
+   Glob(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
+   ```
+   If not found → **STOP**: "VERIFICATION_PLAN.md not found. This should have been created during Phase 1 Step 3. This is a bug in the planning phase." Do NOT auto-generate.
+
+   **5b. Update plan with actual paths:**
+   ```
+   Read(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
+   — Update file/export paths with actual paths from completed tasks
+   — Update API endpoints with actual URLs
+   — Update browser check URLs with actual dev server URLs
+   — Add any new checks discovered during implementation
+   Write updated VERIFICATION_PLAN.md
+   ```
+
+   **5c. Fix-verify loop (max 3 iterations):**
+
+   ```
+   for iteration in 1..3:
+     Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md --run={iteration}/3")
+
+     if ALL auto-checks PASS → break, proceed to shutdown
+     if BROKEN → STOP: "Environment broken. Fix: {action from report}. Re-run /team-verify after fixing."
+     if FAIL:
+       Log: "Run {iteration}/3: {N} checks failed. Creating fix tasks..."
+       Create targeted fix tasks for each failure
+       Assign to a coder, run through review
+       Continue to next iteration
+
+   if iteration == 3 and still FAIL:
+     STOP and escalate to human:
+     "⚠️ Circuit breaker: 3 fix-verify iterations reached. {N} checks still failing.
+     Failing checks: {list}
+     Fix history: {what was tried in each iteration}
+     Human decision needed — automated fixing is not converging."
+   ```
+
+   **5d. Handle remaining items:**
+   - **Human checks** → include in summary report with step-by-step instructions
+   - **SKIP(capability)** → team-verify's blocking gate handles acknowledgment
+   - **UNCLEAR** → team-verify routes to Human Checks
+
+6. Shut down all permanent teammates:
    - Shut down Tech Lead (SendMessage type=shutdown_request)
    - Shut down security-reviewer (SendMessage type=shutdown_request)
    - Shut down logic-reviewer (SendMessage type=shutdown_request)
    - Shut down quality-reviewer (SendMessage type=shutdown_request)
 
-5. Print summary report:
+7. Print summary report:
    ```
    ══════════════════════════════════════════════════
    FEATURE IMPLEMENTATION COMPLETE
@@ -721,6 +805,15 @@ When all tasks are completed:
      Build: ✅ / ❌ (fixed in task #N)
      Tests: ✅ / ❌ (fixed in task #N)
 
+   Verification (/team-verify):
+     Auto-verified: N checks passed
+     Browser-verified: N checks passed (or skipped)
+     Failed then fixed: N items
+     Human checks remaining: N
+     {for each human check:}
+       - [ ] {what to check}
+         → {step-by-step instructions}
+
    Conventions:
      Gold standards used: [list]
      .conventions/ created or updated: ✅ / ❌
@@ -730,7 +823,17 @@ When all tasks are completed:
    ══════════════════════════════════════════════════
    ```
 
-7. TeamDelete to clean up
+8. **Blocking gate before cleanup:**
+
+   Do NOT TeamDelete until all outstanding items are resolved:
+   - All FAIL items fixed (or circuit breaker escalated to human)
+   - All SKIP(capability) items acknowledged by user (team-verify handles this)
+   - All BROKEN items either fixed+re-verified or acknowledged
+   - Human Checks listed in summary report
+
+   If team-verify's blocking gate resulted in "pause" → keep team alive. User will re-run `/team-verify` after checking.
+
+9. TeamDelete to clean up
 
 ## Stuck Protocol
 
