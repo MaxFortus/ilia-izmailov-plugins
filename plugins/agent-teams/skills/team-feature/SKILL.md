@@ -679,14 +679,54 @@ When a coder reports "DONE" and unassigned tasks remain:
 
 When all tasks are completed:
 
-1. **Integration verification** (Lead runs directly):
+**⚠️ CRITICAL: Step 1 (`/team-verify`) is MANDATORY. Do NOT skip it. Do NOT replace it with manual build/test. It is the formal verification gate — without it, the feature is NOT verified.**
+
+1. **MANDATORY: Automated verification** via `/team-verify` (circuit breaker: max 3 iterations):
+
+   This is the formal verification gate. It replaces manual build/test — team-verify runs build, types, tests, browser checks, and spec checks automatically.
+
+   **1a. Check plan exists:**
    ```
-   Run build command (from researcher findings): e.g., pnpm build
-   Run full test suite: e.g., pnpm test
+   Glob(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
    ```
-   - If build fails → create a fix task, assign to a new coder, run through review
-   - If tests fail → create a fix task for the failing tests
-   - Repeat until build + tests pass
+   If not found → **STOP**: "VERIFICATION_PLAN.md not found. This should have been created during Phase 1 Step 3. This is a bug in the planning phase." Do NOT auto-generate.
+
+   **1b. Update plan with actual paths:**
+   ```
+   Read(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
+   — Update file/export paths with actual paths from completed tasks
+   — Update API endpoints with actual URLs
+   — Update browser check URLs with actual dev server URLs
+   — Add any new checks discovered during implementation
+   Write updated VERIFICATION_PLAN.md
+   ```
+
+   **1c. Fix-verify loop (max 3 iterations):**
+
+   ```
+   for iteration in 1..3:
+     Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md --run={iteration}/3")
+
+     if ALL auto-checks PASS → break, proceed to conventions
+     if BROKEN → STOP: "Environment broken. Fix: {action from report}. Re-run /team-verify after fixing."
+     if FAIL:
+       Log: "Run {iteration}/3: {N} checks failed. Creating fix tasks..."
+       Create targeted fix tasks for each failure
+       Assign to a coder, run through review
+       Continue to next iteration
+
+   if iteration == 3 and still FAIL:
+     STOP and escalate to human:
+     "⚠️ Circuit breaker: 3 fix-verify iterations reached. {N} checks still failing.
+     Failing checks: {list}
+     Fix history: {what was tried in each iteration}
+     Human decision needed — automated fixing is not converging."
+   ```
+
+   **1d. Handle remaining items:**
+   - **Human checks** → include in summary report with step-by-step instructions
+   - **SKIP(capability)** → team-verify's blocking gate handles acknowledgment
+   - **UNCLEAR** → team-verify routes to Human Checks
 
 2. **Conventions update** — the conventions task (created in Step 3) should now be unblocked. Assign it to a coder:
 
@@ -724,58 +764,13 @@ When all tasks are completed:
    - Go back to step 2 and run the conventions task. If it was never created → create it now and assign to a coder.
    - Feature cannot be declared COMPLETE without .conventions/ being created or updated.
 
-5. **Automated verification** via `/team-verify` (circuit breaker: max 3 iterations):
-
-   **5a. Check plan exists:**
-   ```
-   Glob(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
-   ```
-   If not found → **STOP**: "VERIFICATION_PLAN.md not found. This should have been created during Phase 1 Step 3. This is a bug in the planning phase." Do NOT auto-generate.
-
-   **5b. Update plan with actual paths:**
-   ```
-   Read(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
-   — Update file/export paths with actual paths from completed tasks
-   — Update API endpoints with actual URLs
-   — Update browser check URLs with actual dev server URLs
-   — Add any new checks discovered during implementation
-   Write updated VERIFICATION_PLAN.md
-   ```
-
-   **5c. Fix-verify loop (max 3 iterations):**
-
-   ```
-   for iteration in 1..3:
-     Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md --run={iteration}/3")
-
-     if ALL auto-checks PASS → break, proceed to shutdown
-     if BROKEN → STOP: "Environment broken. Fix: {action from report}. Re-run /team-verify after fixing."
-     if FAIL:
-       Log: "Run {iteration}/3: {N} checks failed. Creating fix tasks..."
-       Create targeted fix tasks for each failure
-       Assign to a coder, run through review
-       Continue to next iteration
-
-   if iteration == 3 and still FAIL:
-     STOP and escalate to human:
-     "⚠️ Circuit breaker: 3 fix-verify iterations reached. {N} checks still failing.
-     Failing checks: {list}
-     Fix history: {what was tried in each iteration}
-     Human decision needed — automated fixing is not converging."
-   ```
-
-   **5d. Handle remaining items:**
-   - **Human checks** → include in summary report with step-by-step instructions
-   - **SKIP(capability)** → team-verify's blocking gate handles acknowledgment
-   - **UNCLEAR** → team-verify routes to Human Checks
-
-6. Shut down all permanent teammates:
+5. Shut down all permanent teammates:
    - Shut down Tech Lead (SendMessage type=shutdown_request)
    - Shut down security-reviewer (SendMessage type=shutdown_request)
    - Shut down logic-reviewer (SendMessage type=shutdown_request)
    - Shut down quality-reviewer (SendMessage type=shutdown_request)
 
-7. Print summary report:
+6. Print summary report:
    ```
    ══════════════════════════════════════════════════
    FEATURE IMPLEMENTATION COMPLETE
@@ -823,7 +818,7 @@ When all tasks are completed:
    ══════════════════════════════════════════════════
    ```
 
-8. **Blocking gate before cleanup:**
+7. **Blocking gate before cleanup:**
 
    Do NOT TeamDelete until all outstanding items are resolved:
    - All FAIL items fixed (or circuit breaker escalated to human)
@@ -833,7 +828,7 @@ When all tasks are completed:
 
    If team-verify's blocking gate resulted in "pause" → keep team alive. User will re-run `/team-verify` after checking.
 
-9. TeamDelete to clean up
+8. TeamDelete to clean up
 
 ## Stuck Protocol
 
@@ -872,7 +867,8 @@ When things go wrong, handle it yourself — don't involve the user:
 - **Coders are temporary** — spawned per task, killed after completion
 - **Researchers are one-shot** — spawned for specific questions, return findings, done. Can be dispatched anytime.
 - **Enabling agents are one-shot** — spawned per trigger when files touch sensitive areas, not team members
-- **Verify at the end** — build + tests must pass before declaring completion
+- **MANDATORY: Run /team-verify** — Phase 3 Step 1 is `/team-verify`. Do NOT skip it. Do NOT replace with manual build/test. It is the formal verification gate. Without it, the feature is NOT verified. This is a hard rule, not a suggestion.
+- **Verify at the end** — all auto-checks must pass before declaring completion
 - **Propose convention updates** — after every feature, check for recurring issues and new patterns. Propose `.conventions/` updates to the user.
 - **Coders collect approvals** — coders wait for all reviewers + tech-lead before committing, then report DONE to Lead
 - **State file for resilience** — update `.claude/teams/{team-name}/state.md` after every event. Read it to recover after compaction.
