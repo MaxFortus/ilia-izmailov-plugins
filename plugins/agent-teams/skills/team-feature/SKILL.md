@@ -388,7 +388,7 @@ TaskCreate(
 
 - Tooling commands (from researcher findings)
 
-**Always create a conventions task as the LAST task** (blocked by all other tasks):
+**Always create a conventions task as the SECOND TO LAST task** (blocked by all other coding tasks):
 
 ```
 TaskCreate(
@@ -404,7 +404,29 @@ TaskCreate(
 )
 ```
 
-Then set it as blocked by all other tasks via TaskUpdate.
+Then set it as blocked by all other coding tasks via TaskUpdate.
+
+**Always create a verification task as the VERY LAST task** (blocked by conventions task):
+
+```
+TaskCreate(
+  subject="Run /team-verify — formal verification gate",
+  description="MANDATORY. This is the formal verification gate for the feature.
+  Lead must execute this task directly (not assign to a coder).
+
+  Steps:
+  1. Update VERIFICATION_PLAN.md with actual file paths and endpoints from completed tasks
+  2. Run: Skill('team-verify', args='.claude/teams/{team-name}/VERIFICATION_PLAN.md')
+  3. If checks fail → create fix tasks, re-run (max 3 iterations)
+  4. Include human checks in summary report
+
+  DO NOT skip. DO NOT replace with manual build/test.
+  The feature is NOT verified without this step.",
+  activeForm="Running /team-verify verification"
+)
+```
+
+Then set it as blocked by the conventions task via TaskUpdate. This task will appear in TaskList when all coding + conventions tasks are done, ensuring Lead sees it even after context compaction.
 
 #### Step 4: Spawn Tech Lead and validate plan
 
@@ -590,6 +612,7 @@ If you lost context after compaction, read this file. Your role in Phase 2:
 - Listen for DONE/STUCK/ESCALATE from team members
 - DO NOT read code, run checks, or notify reviewers — coders do that directly
 - Update this file after each event
+- When ALL tasks done → Phase 3: MUST run /team-verify (check TaskList for the verification task)
 
 ## Phase: EXECUTION
 ## Complexity: {SIMPLE | MEDIUM | COMPLEX}
