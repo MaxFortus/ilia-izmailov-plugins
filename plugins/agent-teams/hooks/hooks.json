@@ -1,0 +1,16 @@
+{
+  "description": "Agent Teams plugin hooks — post-TeamDelete verification reminder",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/post_teamdelete.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
