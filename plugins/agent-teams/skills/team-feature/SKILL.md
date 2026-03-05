@@ -410,19 +410,18 @@ Then set it as blocked by all other coding tasks via TaskUpdate.
 
 ```
 TaskCreate(
-  subject="Run /team-verify — formal verification gate",
-  description="MANDATORY. This is the formal verification gate for the feature.
-  Lead must execute this task directly (not assign to a coder).
+  subject="Run /team-verify after TeamDelete",
+  description="MANDATORY — Lead executes this directly after shutting down the team.
 
   Steps:
-  1. Update VERIFICATION_PLAN.md with actual file paths and endpoints from completed tasks
-  2. Run: Skill('team-verify', args='.claude/teams/{team-name}/VERIFICATION_PLAN.md')
-  3. If checks fail → create fix tasks, re-run (max 3 iterations)
-  4. Include human checks in summary report
+  1. Copy VERIFICATION_PLAN.md to project root with actual paths
+  2. Shut down all teammates
+  3. TeamDelete
+  4. Run: Skill('team-verify', args='./VERIFICATION_PLAN.md')
 
-  DO NOT skip. DO NOT replace with manual build/test.
-  The feature is NOT verified without this step.",
-  activeForm="Running /team-verify verification"
+  This runs AFTER the team is closed — no conflicts with active agents.
+  team-verify spawns its own verifier agents independently.",
+  activeForm="Preparing verification"
 )
 ```
 
@@ -625,26 +624,29 @@ Your role: listen for DONE/STUCK/ESCALATE from team members.
 ## Phase 3 Instructions (VERIFICATION) — follow step by step when Phase changes
 When you change Phase to VERIFICATION, execute these steps IN ORDER:
 
-### Step 1: Run /team-verify (MANDATORY — do NOT skip)
-```
-Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md")
-```
-- If ALL auto-checks PASS → go to Step 2
-- If FAIL → create fix tasks, assign to coder, after fix re-run Skill("team-verify") again (max 3 times)
-- If BROKEN → STOP, tell user to fix environment
-
-### Step 2: Conventions task
+### Step 1: Conventions task
 - Check TaskList for the conventions task — assign to a coder if not yet assigned
 - Wait for it to complete
 
-### Step 3: Final checks
+### Step 2: Final checks
 - Ask Tech Lead for cross-task consistency check
 - Verify .conventions/ exists: Glob(".conventions/**/*")
 
-### Step 4: Shutdown
+### Step 3: Prepare verification plan
+- Read .claude/teams/{team-name}/VERIFICATION_PLAN.md
+- Update with actual file paths and endpoints from completed tasks
+- Copy to project root: Write("./VERIFICATION_PLAN.md", content)
+
+### Step 4: Shutdown team
 - Shut down all teammates: SendMessage(type="shutdown_request") to each
 - Print summary report
 - TeamDelete
+
+### Step 5: Run /team-verify (MANDATORY — AFTER TeamDelete)
+```
+Skill("team-verify", args="./VERIFICATION_PLAN.md")
+```
+This runs AFTER the team is closed. No conflicts. team-verify reports results independently.
 
 ## Team Roster
 - tech-lead: ACTIVE
@@ -733,56 +735,7 @@ When a coder reports "DONE" and unassigned tasks remain:
 
 When all tasks are completed:
 
-**⚠️ CRITICAL: Step 1 (`/team-verify`) is MANDATORY. Do NOT skip it. Do NOT replace it with manual build/test. It is the formal verification gate — without it, the feature is NOT verified.**
-
-1. **MANDATORY: Automated verification** via `/team-verify` (circuit breaker: max 3 iterations):
-
-   This is the formal verification gate. It replaces manual build/test — team-verify runs build, types, tests, browser checks, and spec checks automatically.
-
-   **1a. Check plan exists:**
-   ```
-   Glob(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
-   ```
-   If not found → **STOP**: "VERIFICATION_PLAN.md not found. This should have been created during Phase 1 Step 3. This is a bug in the planning phase." Do NOT auto-generate.
-
-   **1b. Update plan with actual paths:**
-   ```
-   Read(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
-   — Update file/export paths with actual paths from completed tasks
-   — Update API endpoints with actual URLs
-   — Update browser check URLs with actual dev server URLs
-   — Add any new checks discovered during implementation
-   Write updated VERIFICATION_PLAN.md
-   ```
-
-   **1c. Fix-verify loop (max 3 iterations):**
-
-   ```
-   for iteration in 1..3:
-     Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md --run={iteration}/3")
-
-     if ALL auto-checks PASS → break, proceed to conventions
-     if BROKEN → STOP: "Environment broken. Fix: {action from report}. Re-run /team-verify after fixing."
-     if FAIL:
-       Log: "Run {iteration}/3: {N} checks failed. Creating fix tasks..."
-       Create targeted fix tasks for each failure
-       Assign to a coder, run through review
-       Continue to next iteration
-
-   if iteration == 3 and still FAIL:
-     STOP and escalate to human:
-     "⚠️ Circuit breaker: 3 fix-verify iterations reached. {N} checks still failing.
-     Failing checks: {list}
-     Fix history: {what was tried in each iteration}
-     Human decision needed — automated fixing is not converging."
-   ```
-
-   **1d. Handle remaining items:**
-   - **Human checks** → include in summary report with step-by-step instructions
-   - **SKIP(capability)** → team-verify's blocking gate handles acknowledgment
-   - **UNCLEAR** → team-verify routes to Human Checks
-
-2. **Conventions update** — the conventions task (created in Step 3) should now be unblocked. Assign it to a coder:
+1. **Conventions update** — the conventions task (created in Step 3) should now be unblocked. Assign it to a coder:
 
    The coder receives the task description which tells them exactly what to create/update. The coder collects signals from:
 
@@ -808,15 +761,25 @@ When all tasks are completed:
 
    After the conventions task is done, report what was created/updated in the summary.
 
-3. Ask Tech Lead for a **final cross-task consistency check**
+2. Ask Tech Lead for a **final cross-task consistency check**
 
-4. **Completion gate** (Lead verifies before declaring done):
+3. **Completion gate** (Lead verifies before declaring done):
    ```
    Glob(".conventions/**/*")
    ```
    - If .conventions/ does not exist or was not modified during this session → **STOP. Feature is NOT complete.**
-   - Go back to step 2 and run the conventions task. If it was never created → create it now and assign to a coder.
+   - Go back to step 1 and run the conventions task. If it was never created → create it now and assign to a coder.
    - Feature cannot be declared COMPLETE without .conventions/ being created or updated.
+
+4. **Prepare VERIFICATION_PLAN.md for post-team verification:**
+   ```
+   Read(".claude/teams/{team-name}/VERIFICATION_PLAN.md")
+   — Update file/export paths with actual paths from completed tasks
+   — Update API endpoints with actual URLs
+   — Update browser check URLs with actual dev server URLs
+   — Add any new checks discovered during implementation
+   — Copy to project root: Write("./VERIFICATION_PLAN.md", updated_content)
+   ```
 
 5. Shut down all permanent teammates:
    - Shut down Tech Lead (SendMessage type=shutdown_request)
@@ -850,39 +813,28 @@ When all tasks are completed:
      Escalations (pattern didn't fit): N
      Enabling agents triggered: N
 
-   Integration:
-     Build: ✅ / ❌ (fixed in task #N)
-     Tests: ✅ / ❌ (fixed in task #N)
-
-   Verification (/team-verify):
-     Auto-verified: N checks passed
-     Browser-verified: N checks passed (or skipped)
-     Failed then fixed: N items
-     Human checks remaining: N
-     {for each human check:}
-       - [ ] {what to check}
-         → {step-by-step instructions}
-
    Conventions:
      Gold standards used: [list]
      .conventions/ created or updated: ✅ / ❌
      Files added/changed: [list]
 
    Definition of Done: ✅ met / ❌ partial
+
+   ⏳ Running automated verification next...
    ══════════════════════════════════════════════════
    ```
 
-7. **Blocking gate before cleanup:**
+7. TeamDelete to clean up the team
 
-   Do NOT TeamDelete until all outstanding items are resolved:
-   - All FAIL items fixed (or circuit breaker escalated to human)
-   - All SKIP(capability) items acknowledged by user (team-verify handles this)
-   - All BROKEN items either fixed+re-verified or acknowledged
-   - Human Checks listed in summary report
-
-   If team-verify's blocking gate resulted in "pause" → keep team alive. User will re-run `/team-verify` after checking.
-
-8. TeamDelete to clean up
+8. **MANDATORY: Run /team-verify** (after team is closed — no conflicts):
+   ```
+   Skill("team-verify", args="./VERIFICATION_PLAN.md")
+   ```
+   This is the LAST thing team-feature does. team-verify runs independently:
+   - Spawns verifier agents (CI, browser, spec) in parallel
+   - Compiles verification report
+   - Handles human acknowledgment gate (SKIP/UNCLEAR/BROKEN)
+   - If failures found → reports them (user fixes manually or re-runs /team-verify)
 
 ## Stuck Protocol
 
@@ -921,7 +873,7 @@ When things go wrong, handle it yourself — don't involve the user:
 - **Coders are temporary** — spawned per task, killed after completion
 - **Researchers are one-shot** — spawned for specific questions, return findings, done. Can be dispatched anytime.
 - **Enabling agents are one-shot** — spawned per trigger when files touch sensitive areas, not team members
-- **MANDATORY: Run /team-verify** — Phase 3 Step 1 is `/team-verify`. Do NOT skip it. Do NOT replace with manual build/test. It is the formal verification gate. Without it, the feature is NOT verified. This is a hard rule, not a suggestion.
+- **MANDATORY: Run /team-verify AFTER TeamDelete** — the very last thing team-feature does is `Skill("team-verify", args="./VERIFICATION_PLAN.md")`. This runs after the team is closed. Do NOT skip. Do NOT replace with manual build/test. Check TaskList for the verification task.
 - **Verify at the end** — all auto-checks must pass before declaring completion
 - **Propose convention updates** — after every feature, check for recurring issues and new patterns. Propose `.conventions/` updates to the user.
 - **Coders collect approvals** — coders wait for all reviewers + tech-lead before committing, then report DONE to Lead
