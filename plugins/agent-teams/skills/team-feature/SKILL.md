@@ -608,14 +608,43 @@ Write(".claude/teams/{team-name}/state.md"):
 # Team State — feature-{name}
 
 ## Recovery Instructions
-If you lost context after compaction, read this file. Your role in Phase 2:
-- Listen for DONE/STUCK/ESCALATE from team members
-- DO NOT read code, run checks, or notify reviewers — coders do that directly
+If you lost context after compaction, read this file.
+- Check current phase below and follow its instructions
 - Update this file after each event
-- When ALL tasks done → Phase 3: MUST run /team-verify (check TaskList for the verification task)
 
 ## Phase: EXECUTION
 ## Complexity: {SIMPLE | MEDIUM | COMPLEX}
+## Team Name: feature-{short-name}
+
+## Phase 2 Instructions (EXECUTION)
+Your role: listen for DONE/STUCK/ESCALATE from team members.
+- DO NOT read code, run checks, or notify reviewers — coders do that directly
+- Update this file after each event
+- When ALL coding tasks show COMPLETED → change Phase to VERIFICATION and follow Phase 3 instructions below
+
+## Phase 3 Instructions (VERIFICATION) — follow step by step when Phase changes
+When you change Phase to VERIFICATION, execute these steps IN ORDER:
+
+### Step 1: Run /team-verify (MANDATORY — do NOT skip)
+```
+Skill("team-verify", args=".claude/teams/{team-name}/VERIFICATION_PLAN.md")
+```
+- If ALL auto-checks PASS → go to Step 2
+- If FAIL → create fix tasks, assign to coder, after fix re-run Skill("team-verify") again (max 3 times)
+- If BROKEN → STOP, tell user to fix environment
+
+### Step 2: Conventions task
+- Check TaskList for the conventions task — assign to a coder if not yet assigned
+- Wait for it to complete
+
+### Step 3: Final checks
+- Ask Tech Lead for cross-task consistency check
+- Verify .conventions/ exists: Glob(".conventions/**/*")
+
+### Step 4: Shutdown
+- Shut down all teammates: SendMessage(type="shutdown_request") to each
+- Print summary report
+- TeamDelete
 
 ## Team Roster
 - tech-lead: ACTIVE
@@ -643,7 +672,7 @@ Coders drive their own review process via SendMessage to reviewers and tech-lead
 | Coder: `IN_REVIEW: task #N` | Update state.md (mark IN_REVIEW). No other action needed. |
 | Coder: `DONE: task #N` | Update state.md (mark completed). If unassigned tasks remain AND active coders < max, spawn new coder with team roster. |
 | Coder: `DONE: task #N, claiming task #M` | Update state.md (mark #N completed, #M in progress by same coder). No spawn needed — coder already claimed next task. |
-| Coder: `DONE: task #N. ALL MY TASKS COMPLETE` | Update state.md. Check if ALL tasks done → Phase 3. If unassigned remain, spawn new coder. |
+| Coder: `DONE: task #N. ALL MY TASKS COMPLETE` | Update state.md. Check if ALL coding tasks done → **change Phase in state.md to VERIFICATION and follow Phase 3 Instructions in state.md step by step.** If unassigned remain, spawn new coder. |
 | Coder: `QUESTION: task #N. [question]` | Answer from your Phase 1 context if you can. If not — dispatch a researcher (Explore or general-purpose with WebSearch), then SendMessage the answer to coder. |
 | Coder: `STUCK: task #N` | Dispatch a researcher to investigate. Adjust task description or reassign to different coder. |
 | Coder: `REVIEW_LOOP: task #N` | Dispatch a researcher to read code + review feedback. SendMessage to coder with concrete fix. |
@@ -669,10 +698,12 @@ After every event, update `.claude/teams/{team-name}/state.md`:
 
 If your context feels incomplete or you cannot remember the current state:
 1. Read `.claude/teams/{team-name}/state.md`
-2. Follow the Recovery Instructions in the file
-3. Continue monitoring from the current phase
+2. Check the **Phase** field — it tells you what to do:
+   - `EXECUTION` → follow Phase 2 Instructions (monitor mode)
+   - `VERIFICATION` → follow Phase 3 Instructions **step by step** (the literal commands are in state.md)
+3. The state file contains EVERYTHING you need — team roster, task statuses, and exact commands to run.
 
-**This is your safety net.** The state file contains everything you need to recover after context compaction.
+**This is your safety net.** State.md is an executable script, not just a log.
 
 #### Spawning new coders:
 
