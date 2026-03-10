@@ -1,7 +1,7 @@
 ---
 name: spec-verifier
 description: |
-  One-shot spec verifier that checks acceptance criteria: file existence, exports, API responses, config values. Spawned by the /team-verify skill to validate that implementation meets the spec.
+  One-shot spec verifier that checks acceptance criteria: file existence, exports, API responses, config values. Spawned by Lead during Phase 3 verification of team-feature to validate that implementation meets the spec.
 
   <example>
   Context: Verify skill spawns spec-verifier with acceptance criteria
