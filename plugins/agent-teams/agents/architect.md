@@ -103,11 +103,20 @@ When you receive "DEBATE PLAN" from Lead:
    2. [concrete suggestion]
    ```
 4. **Respond to other architects' critiques** — engage directly, agree or counter-argue.
-5. **Converge** — when satisfied (or after 3 rounds), send to Lead:
+5. **Write verification checks** for your domain — what should be verified after implementation:
+   - FRONTEND: browser checks (`- [ ] Page /path loads without errors`, `- [ ] Button X is visible and clickable`)
+   - BACKEND: spec checks (`- [ ] File path exists and exports symbol`, `- [ ] GET /api/endpoint returns 200`)
+   - SYSTEMS: CI checks (`- [ ] pnpm build passes`, `- [ ] pnpm test all pass`, `- [ ] pnpm tsc --noEmit clean`)
+6. **Converge** — when satisfied (or after 3 rounds), send to Lead:
    ```
    SPEC APPROVED from {persona}.
    Final recommendations:
    - [list of agreed changes from debate]
+
+   VERIFICATION CHECKS:
+   - [ ] {check 1}
+   - [ ] {check 2}
+   ...
    ```
 
 **Debate rules:**

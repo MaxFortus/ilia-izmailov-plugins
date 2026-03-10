@@ -294,7 +294,9 @@ Feature Definition of Done:
 
 You'll pass this DoD to Tech Lead for DECISIONS.md, and include it in task descriptions.
 
-**Write VERIFICATION_PLAN.md** — the verification checklist for automated post-implementation checks:
+**Write VERIFICATION_PLAN.md** — the verification checklist for automated post-implementation checks.
+
+**For SIMPLE/MEDIUM** — Lead writes it now based on researcher findings:
 
 ```
 Write(".claude/teams/{team-name}/VERIFICATION_PLAN.md"):
@@ -323,11 +325,9 @@ Write(".claude/teams/{team-name}/VERIFICATION_PLAN.md"):
   → {Step-by-step instructions for manual verification}
 ```
 
-**How to populate sections:**
-- **Build & Types / Tests** — from researcher findings (build/test/lint commands)
-- **Browser Checks** — from DoD and task criteria that involve visible UI changes
-- **Spec Checks** — from task acceptance criteria (file existence, exports, API contracts, config values)
-- **Human Checks** — anything that requires human judgment (design quality, UX flow, business logic correctness)
+How to populate: Build/Tests from researcher findings, Browser Checks from UI criteria, Spec Checks from acceptance criteria, Human Checks for anything requiring judgment.
+
+**For COMPLEX** — skip writing VERIFICATION_PLAN.md here. Architects will populate it during the debate phase (Step 4c) — each adds checks from their domain expertise. This produces a much more thorough plan than Lead writing it alone.
 
 Sections are optional — omit empty sections. Section names are fixed keywords used for parsing during Phase 3 verification.
 
@@ -484,8 +484,12 @@ INSTRUCTIONS:
 2. Read CLAUDE.md and .conventions/ for project context
 3. Post your CRITIQUE to the other two architects via SendMessage
 4. Respond to their critiques — debate directly with each other
-5. Max 3 rounds of exchange
-6. When you agree on the spec, send me: SPEC APPROVED + final recommendations"
+5. Add VERIFICATION CHECKS from your domain — what should be verified after implementation:
+   - Frontend: browser checks (pages load, elements visible, interactions work)
+   - Backend: spec checks (files exist, exports correct, API returns expected status)
+   - Systems: CI checks (build passes, types clean, tests pass, conventions met)
+6. Max 3 rounds of exchange
+7. When you agree, send me: SPEC APPROVED + final recommendations + your verification checks"
 ```
 
 **Step 4c-3: Monitor debate and handle convergence:**
@@ -497,6 +501,32 @@ Wait for all 3 architects to send "SPEC APPROVED" to Lead. If they converge:
   - Feature is mostly UI → architect-frontend is Primary
   - Feature is mostly API/DB → architect-backend is Primary
   - Feature is cross-cutting/infra → architect-systems is Primary
+- **Compile VERIFICATION_PLAN.md** from all architects' verification checks:
+
+```
+Lead collects verification checks from all 3 architects and writes:
+
+Write(".claude/teams/{team-name}/VERIFICATION_PLAN.md"):
+
+# Verification Plan
+## Feature: {feature name}
+
+## Build & Types
+{checks from architect-systems: build commands, typecheck}
+
+## Tests
+{checks from architect-systems: test commands, specific test files}
+
+## Browser Checks
+{checks from architect-frontend: pages, elements, interactions}
+
+## Spec Checks
+{checks from architect-backend: file existence, exports, API contracts}
+{checks from architect-systems: config values, convention compliance}
+
+## Human Checks
+{anything architects flagged as not automatable}
+```
 
 ```
 SendMessage to {primary architect}:
