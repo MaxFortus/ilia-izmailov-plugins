@@ -655,6 +655,8 @@ Task(
   name="coder-<N>",
   prompt="You are Coder #{N}. Team: feature-<short-name>.
 
+FEATURE GOAL: {1-2 sentences — what we're building and why, so you understand the big picture}
+
 YOUR TEAM ROSTER (communicate directly via SendMessage):
 - Reviewers: {unified-reviewer (SIMPLE) / security-reviewer, logic-reviewer, quality-reviewer (MEDIUM)}
 - Tech Lead: tech-lead
@@ -680,6 +682,8 @@ Task(
   team_name="feature-<short-name>",
   name="coder-<N>",
   prompt="You are Coder #{N}. Team: feature-<short-name>.
+
+FEATURE GOAL: {1-2 sentences — what we're building and why, so you understand the big picture}
 
 YOUR TEAM ROSTER (communicate directly via SendMessage):
 - Reviewers (specialized architects):
