@@ -15,19 +15,19 @@
       "name": "vibe-audit",
       "source": "./plugins/vibe-audit",
       "description": "Interactive feature audit for vibe-coded projects - finds dead code through conversation",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "agent-teams",
       "source": "./plugins/agent-teams",
       "description": "Launch a team of AI agents to implement features with code review gates",
-      "version": "0.1.0"
+      "version": "0.3.0"
     },
     {
       "name": "expert-arena",
       "source": "./plugins/expert-arena",
       "description": "Expert debate arena — real experts argue organically and converge on optimal solutions",
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "name": "team-research",
