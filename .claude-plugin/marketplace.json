@@ -1,7 +1,7 @@
 {
   "name": "ilia-izmailov-plugins",
   "owner": {
-    "name": "Ilya Izmailov",
+    "name": "Ilia Izmailov",
     "url": "https://github.com/izmailovilya"
   },
   "plugins": [
@@ -27,6 +27,12 @@
       "name": "expert-arena",
       "source": "./plugins/expert-arena",
       "description": "Expert debate arena — real experts argue organically and converge on optimal solutions",
+      "version": "1.0.0"
+    },
+    {
+      "name": "team-research",
+      "source": "./plugins/team-research",
+      "description": "Launch a team of AI agents for deep parallel codebase research — causal understanding, not just coverage",
       "version": "1.0.0"
     }
   ]

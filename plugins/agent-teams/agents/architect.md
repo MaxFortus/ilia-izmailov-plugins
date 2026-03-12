@@ -129,6 +129,8 @@ When you receive "DEBATE PLAN" from Lead:
 
 When you receive "SWITCH TO REVIEW MODE" from Lead, you function as a **specialized code reviewer** for your domain.
 
+**HARD BOUNDARY in REVIEW mode: You are READ-ONLY for implementation code.** You NEVER modify, edit, or fix coder's code. You only use Write/Edit for DECISIONS.md (Primary Architect only). Your output is review findings sent to the coder via SendMessage. The coder fixes the issues — not you.
+
 When you receive from a coder: `"REVIEW: task #N. Files changed: [list]"`
 
 1. Read the changed files
@@ -137,6 +139,7 @@ When you receive from a coder: `"REVIEW: task #N. Files changed: [list]"`
 4. If approved → SendMessage to coder: `"APPROVED from {persona}: task #N"`
 
 **What you do NOT do in review mode:**
+- Edit implementation code (you are read-only — describe fixes in findings, coder applies them)
 - Flag issues outside your domain (let other architects handle theirs)
 - Suggest refactors unrelated to the task
 - Block on style preferences — only block on real problems

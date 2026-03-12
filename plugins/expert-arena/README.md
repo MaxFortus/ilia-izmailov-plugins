@@ -1,6 +1,6 @@
 # Expert Arena
 
-Expert debate arena — real experts argue organically and converge on optimal solutions for any domain.
+Expert evaluation arena — real experts independently assess options, cross-enrich evaluations, and filter out weak ideas. Produces a decision map, not a single verdict.
 
 ## Installation
 
@@ -27,42 +27,42 @@ Works for **any domain**: engineering, product, strategy, business, science, phi
 ## How It Works
 
 ### Phase 0: Expert Selection
-- Analyzes your question (domain, type, stakes)
+- Analyzes your question (domain, type, stakes, initial options)
 - Selects 3-5 **real experts** with published positions (books, articles, talks)
-- Ensures diverse, **opposing** viewpoints — not an echo chamber
-- Includes a **Devil's Advocate** with veto power
+- Ensures diverse viewpoints — not an echo chamber
+- Includes a **Devil's Advocate** who defends options from premature elimination
 - Presents the panel for your review
 
 ### Phase 1: Reconnaissance
 - Launches 2-4 researcher agents **in parallel**
-- Code questions: project architecture, best practices, constraints
-- Non-technical questions: data, expert opinions, case studies
-- Researchers report findings and exit — they don't participate in debates
+- Gathers context (code architecture, best practices, data, case studies)
+- **Identifies 3-6 concrete options/approaches** for experts to evaluate
+- Researchers report findings and exit
 
 ### Phase 2: Arena Launch
-- Compiles research into a briefing packet
-- Creates an Agent Team
+- Compiles research into a briefing + numbered option list
+- Presents options to you for approval (add/remove before launch)
 - Launches **all experts simultaneously** with full context
 
-### Phase 3: Organic Debates
-Experts debate **directly with each other** (not through a moderator):
+### Phase 3: Evaluation (3 stages)
 
-1. Each expert broadcasts their position + honest self-critique
-2. Experts find weaknesses and **challenge each other directly**
-3. Responses, counter-arguments, position changes happen organically
-4. Devil's Advocate can raise a **VETO** if fundamental flaw found
-5. **Live commentary** — moderator narrates key moments like a sports commentator
+**Stage A — Independent Evaluation:**
+Each expert evaluates every option (pros, cons, 1-5 rating) and sends results **only to the moderator**. Experts don't see each other's evaluations — prevents anchoring bias. Timeout: 5 minutes per expert.
 
-### Phase 4: Convergence
-Debates end when 3+ experts send final positions, all go quiet, or 20 min timeout.
+**Stage B — Cross-Enrichment:**
+Moderator compiles and broadcasts all evaluations as a summary table. Experts can **add arguments** they missed after seeing others' perspectives. No debates — enrichment only. Timeout: 5-7 minutes.
 
-### Phase 5: Synthesis
+**Stage C — Filtering:**
+Experts vote on which options are clearly weak. An option is eliminated if 3+ experts vote to remove it. Devil's Advocate can **VETO** an elimination — requires finding a legitimate strong argument to defend the option. Veto prevents groupthink, not stubbornness.
+
+**Live Commentary:**
+The moderator provides real-time commentary throughout — announcing evaluations as they arrive, highlighting unexpected ratings, noting disagreements, and narrating the filtering drama. Keeps you engaged while experts work.
+
+### Phase 4: Synthesis
 Creates a final document with:
-- Verdict and recommendation
-- Debate chronicle (who challenged whom, who changed position)
-- Arguments for and against
-- Remaining disagreements
-- Action plan
+- **Option map** — each surviving option with all pros/cons from all experts, per-expert rating table, and "when to choose this option" guidance
+- **Decision navigator** — "if your context is X, choose option Y because Z" (table format)
+- Eliminated options with reasons and vote counts
 
 Saves to `docs/arena/YYYY-MM-DD-[topic].md`
 
@@ -72,11 +72,12 @@ Saves to `docs/arena/YYYY-MM-DD-[topic].md`
 expert-arena/
 ├── .claude-plugin/
 │   └── plugin.json
-├── commands/
-│   └── expert-arena.md    # /expert-arena command (moderator)
 ├── agents/
-│   ├── expert.md           # Expert debater agent
-│   └── researcher.md       # One-shot research agent
+│   ├── expert.md             # Expert evaluator agent
+│   └── researcher.md         # One-shot research agent
+├── skills/
+│   └── expert-arena/
+│       └── SKILL.md          # Moderator orchestration
 └── README.md
 ```
 
@@ -84,20 +85,21 @@ expert-arena/
 
 | Principle | Why |
 |-----------|-----|
+| **Independent evaluation first** | Prevents anchoring — experts form opinions before seeing others |
 | **Real people** | Experts have actual published positions — not invented |
-| **Intentional conflict** | Deliberately selects people who would disagree |
-| **Direct communication** | Experts argue peer-to-peer, no telephone game |
-| **Position change = strength** | Changing your mind when convinced is valued |
-| **Devil's Advocate with veto** | Safety net against groupthink |
-| **Live commentary** | Users see thinking evolve in real-time |
+| **Intentional diversity** | Deliberately selects people who would evaluate differently |
+| **No forced convergence** | Divergent opinions are valuable signal, not a problem |
+| **Cross-enrichment** | Experts enrich each other's arguments without debating |
+| **Devil's Advocate with veto** | Safety net against premature elimination of options |
+| **Option map, not verdict** | Output preserves variability — user picks based on their context |
 
 ## When to Use
 
-- Big architectural or strategic decisions
+- Big architectural or strategic decisions with multiple viable approaches
 - Trade-offs with no obvious right answer
-- Need diverse expert perspectives on a topic
-- Want to stress-test an idea before committing
-- Any question where smart people would genuinely disagree
+- Need diverse expert perspectives on each option
+- Want a decision map, not a single recommendation
+- Any question where the right answer depends on context
 
 ## License
 

@@ -1,12 +1,12 @@
 {
   "name": "expert-arena",
   "version": "1.0.0",
-  "description": "Expert debate arena — dynamic experts debate and converge on optimal solutions for any domain",
+  "description": "Expert evaluation arena — real experts independently assess options, cross-enrich, and produce a decision map",
   "author": {
-    "name": "Ilya Izmailov",
+    "name": "Ilia Izmailov",
     "url": "https://github.com/izmailovilya"
   },
   "repository": "https://github.com/izmailovilya/ilia-izmailov-plugins",
   "license": "MIT",
-  "keywords": ["experts", "debate", "arena", "consensus", "decision-making", "agent-teams"]
+  "keywords": ["experts", "evaluation", "arena", "decision-map", "decision-making", "agent-teams"]
 }

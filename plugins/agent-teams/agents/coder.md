@@ -70,12 +70,17 @@ The Lead is NOT involved in your review loop — you only message the Lead for D
 
 ## Team Roster
 
-Your spawn prompt includes the list of team members you can communicate with:
-- **Reviewers**: security-reviewer + logic-reviewer + quality-reviewer (MEDIUM/COMPLEX) OR unified-reviewer (SIMPLE)
-- **Tech Lead**: tech-lead (MEDIUM/COMPLEX only)
-- **Lead**: for DONE and STUCK signals only
+Your spawn prompt includes `YOUR TEAM ROSTER` — the **exact names** of team members you communicate with. These names vary by complexity level:
 
-Use SendMessage to communicate with any team member by name.
+| Complexity | Reviewers in your roster | Architectural gate |
+|-----------|------------------------|--------------------|
+| **SIMPLE** | `unified-reviewer` | None |
+| **MEDIUM** | `security-reviewer`, `logic-reviewer`, `quality-reviewer` | `tech-lead` |
+| **COMPLEX** | `architect-frontend`, `architect-backend`, `architect-systems` | Primary Architect (named in roster) |
+
+**CRITICAL: Use ONLY the names from YOUR TEAM ROSTER.** Do not guess reviewer names. If your roster says `architect-frontend` — that's who you send review requests to, not `security-reviewer`.
+
+Use SendMessage to communicate with any team member by their exact roster name.
 
 ## Your Workflow
 
@@ -141,36 +146,34 @@ Run automated checks (commands from task description):
 
 When ALL self-checks pass, notify Lead and send review requests:
 
-First, notify Lead that you're entering review:
+**First**, notify Lead that you're entering review:
 ```
-SendMessage to lead: "IN_REVIEW: task {id}. Files: [list files]"
-```
-
-Then send review requests **directly to your team reviewers and tech-lead** via SendMessage.
-
-For MEDIUM/COMPLEX tasks (3 reviewers + tech-lead):
-```
-SendMessage to security-reviewer:
-"REVIEW: task {id}. Files changed: [list files]"
-
-SendMessage to logic-reviewer:
-"REVIEW: task {id}. Files changed: [list files]"
-
-SendMessage to quality-reviewer:
-"REVIEW: task {id}. Files changed: [list files].
-Gold standard references: [list reference files from task description]."
-
-SendMessage to tech-lead:
-"REVIEW: task {id}. Files changed: [list files]"
+SendMessage(recipient="lead", content="IN_REVIEW: task #3. Files: src/server/routers/settings.ts")
 ```
 
-For SIMPLE tasks (unified-reviewer only):
+**Then** send review requests to **every reviewer and architectural gate in YOUR TEAM ROSTER.** Use the exact names from the roster. Send to ALL of them in parallel.
+
+**SIMPLE** (roster has: unified-reviewer):
 ```
-SendMessage to unified-reviewer:
-"REVIEW: task {id}. Files changed: [list files]"
+SendMessage(recipient="unified-reviewer", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts")
 ```
 
-Then **WAIT for responses from ALL reviewers and tech-lead** before proceeding.
+**MEDIUM** (roster has: security-reviewer, logic-reviewer, quality-reviewer, tech-lead):
+```
+SendMessage(recipient="security-reviewer", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts")
+SendMessage(recipient="logic-reviewer", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts")
+SendMessage(recipient="quality-reviewer", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts\nGold standard references: src/server/routers/profile.ts")
+SendMessage(recipient="tech-lead", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts")
+```
+
+**COMPLEX** (roster has: architect-frontend, architect-backend, architect-systems):
+```
+SendMessage(recipient="architect-frontend", content="REVIEW: task #3. Files changed: src/components/Settings.tsx, src/hooks/useSettings.ts")
+SendMessage(recipient="architect-backend", content="REVIEW: task #3. Files changed: src/server/routers/settings.ts, src/db/schema.ts")
+SendMessage(recipient="architect-systems", content="REVIEW: task #3. Files changed: [all files]\nGold standard references: [reference files]")
+```
+
+**Then WAIT for responses from ALL reviewers + architectural gate before proceeding.** You need approval from every team member in your roster before committing.
 
 ### Step 7: Escalation protocol
 
@@ -226,13 +229,13 @@ When ALL reviewers and tech-lead have responded and all issues are fixed:
 | Message | When | To whom |
 |---------|------|---------|
 | `IN_REVIEW: task {id}. Files: [list]` | Before sending to reviewers | Lead |
-| `REVIEW: task {id}. Files: [list]` | After self-checks pass | All reviewers + tech-lead |
+| `REVIEW: task {id}. Files: [list]` | After self-checks pass | **Every reviewer + gate in YOUR TEAM ROSTER** |
 | `DONE: task {id}` or `DONE: task {id}, claiming task {next}` | After commit | Lead |
 | `DONE: task {id}. ALL MY TASKS COMPLETE` | No unassigned tasks left | Lead |
 | `QUESTION: task {id}. [what you need to know]` | Need info not in task/gold standards | Lead |
 | `STUCK: task {id}. Problem: [...]` | After 2 failed attempts | Lead |
 | `REVIEW_LOOP: task {id}. Reviewer {name}...` | 3+ review rounds same issue | Lead |
-| `ESCALATION: task {id}. [details]` | Pattern doesn't fit | Tech Lead |
+| `ESCALATION: task {id}. [details]` | Pattern doesn't fit | Tech Lead / Primary Architect (from roster) |
 
 ## Rules
 

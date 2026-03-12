@@ -1,31 +1,39 @@
-# 🧹 Vibe Audit Plugin
+# Vibe Audit
 
 Interactive feature audit for vibe-coded projects. Finds dead code, unused features, and experiments through **conversation** with the developer.
 
 ## Problem
 
-В vibe-coding создаётся много экспериментального кода:
-- Пробуем фичу → не зашло → забыли удалить
-- Рефакторим → старый код остаётся
-- A/B тест → оба варианта в коде
+In vibe-coding, lots of experimental code gets created:
+- Try a feature → doesn't work out → forget to delete
+- Refactor → old code stays behind
+- A/B test → both variants remain in code
 
-**Статический анализ не помогает** — код технически используется, но бизнес-логика устарела.
+**Static analysis doesn't help** — the code is technically used, but the business logic is outdated.
 
 ## Solution
 
-**Интерактивный аудит:**
-1. 🔍 Агент находит "подозрительные" области
-2. 💬 Спрашивает у тебя — нужно это или нет
-3. 🧹 Безопасно удаляет с git backup
+**Interactive audit:**
+1. Agent finds suspicious areas
+2. Asks you — is this still needed?
+3. Safely removes what you don't need, with git backup
+
+## Installation
+
+```bash
+/plugin marketplace add izmailovilya/ilia-izmailov-plugins
+/plugin install vibe-audit@ilia-izmailov-plugins
+```
 
 ## Usage
 
 ```
-/vibe-audit              # Full codebase scan (feature-scanner)
-/vibe-audit features     # src/features/ deep audit (features-auditor)
-/vibe-audit server       # src/server/ routers & services (server-auditor)
-/vibe-audit ui           # src/design-system/ components (ui-auditor)
-/vibe-audit stores       # src/stores/ Zustand state (stores-auditor)
+/vibe-audit              # Full codebase scan
+/vibe-audit features     # src/features/ deep audit
+/vibe-audit server       # src/server/ routers & services
+/vibe-audit ui           # src/design-system/ components
+/vibe-audit stores       # src/stores/ Zustand state
+/vibe-audit all          # Run ALL auditors in parallel
 ```
 
 ## Workflow
@@ -33,19 +41,19 @@ Interactive feature audit for vibe-coded projects. Finds dead code, unused featu
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  1. DISCOVERY                                               │
-│     feature-scanner находит подозрительное                  │
+│     Agents scan for suspicious code                         │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  2. INTERVIEW                                               │
-│     "RAT hypotheses — используется сейчас?"                 │
+│     "Is this still needed?"                                 │
 │                                                             │
-│     🗑️ Удалить    ⚠️ Deprecated    ✅ Нужно    🤔 Не уверен │
+│     🗑️ Delete    ⚠️ Deprecated    ✅ Keep    🤔 Not sure    │
 └─────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │  3. CLEANUP                                                 │
-│     cleanup-executor безопасно удаляет                      │
+│     cleanup-executor safely removes                         │
 │     (git branch + commit + TypeScript check)                │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -56,63 +64,67 @@ Interactive feature audit for vibe-coded projects. Finds dead code, unused featu
 
 | Agent | Purpose |
 |-------|---------|
-| `feature-scanner` | Общий скан: features, routers, pages |
-| `usage-analyzer` | Глубокий анализ конкретной фичи |
-| `cleanup-executor` | Безопасное удаление с git backup |
+| `feature-scanner` | General scan: features, routers, pages |
+| `usage-analyzer` | Deep analysis of a specific feature's usage |
+| `cleanup-executor` | Safe removal with git backup |
 
 ### Specialized Auditors
 
 | Agent | Target | What it finds |
 |-------|--------|---------------|
-| `ui-auditor` | `src/design-system/` | Неиспользуемые компоненты, style inconsistencies |
+| `ui-auditor` | `src/design-system/` | Unused components, style inconsistencies |
 | `stores-auditor` | `src/stores/` | Dead Zustand slices, unused selectors |
 | `features-auditor` | `src/features/` | Unused exports, internal dead code |
 | `server-auditor` | `src/server/` | Unused tRPC procedures, dead services |
 
 ## Signals of Suspicion
 
-- **Orphan routes** — tRPC без вызовов с клиента
-- **Dead UI** — компоненты без импортов
-- **Isolated features** — папки с минимальными связями
-- **Stale code** — нет коммитов 30+ дней
-- **Duplicate patterns** — похожая логика в разных местах
+- **Orphan routes** — tRPC procedures with no client calls
+- **Dead UI** — components with no imports
+- **Isolated features** — directories with minimal connections
+- **Stale code** — no commits in 30+ days
+- **Duplicate patterns** — similar logic in different places
 
 ## Safety
 
-- ❌ Никогда не удаляет без подтверждения
-- ✅ Создаёт git branch перед удалением
-- ✅ Проверяет TypeScript после удаления
-- ✅ Логирует все изменения
+- Never deletes without confirmation
+- Creates git branch before deletion
+- Runs TypeScript check after deletion
+- Logs all changes
 
 ## Example Session
 
 ```
 > /vibe-audit features
 
-🔍 Сканирую src/features/...
+🔍 Scanning src/features/...
 
-Нашёл 3 подозрительных области:
+Found 3 suspicious areas:
 
 📦 **rat-hypothesis**
-- Файлов: 12
-- Последний коммит: 45 дней назад
-- Импортов извне: 2
+- Files: 12
+- Last commit: 45 days ago
+- External imports: 2
 
-Это нужно?
-[ ] 🗑️ Удалить
-[x] ✅ Нужно — это для нового релиза
+Is this needed?
+[ ] 🗑️ Delete
+[x] ✅ Keep — this is for the new release
 
 📦 **old-onboarding**
-- Файлов: 8
-- Последний коммит: 90 дней назад
-- Импортов извне: 0
+- Files: 8
+- Last commit: 90 days ago
+- External imports: 0
 
-Это нужно?
-[x] 🗑️ Удалить — заменили на новый онбординг
+Is this needed?
+[x] 🗑️ Delete — replaced by new onboarding
 
 ...
 
-🧹 Готово! Удалено:
-- src/features/old-onboarding/ (8 файлов)
-- Создан коммит: cleanup/old-onboarding-20260129
+🧹 Done! Removed:
+- src/features/old-onboarding/ (8 files)
+- Created commit: cleanup/old-onboarding-20260129
 ```
+
+## License
+
+MIT

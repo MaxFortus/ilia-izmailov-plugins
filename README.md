@@ -1,4 +1,4 @@
-# Ilya Izmailov's Claude Code Plugins
+# Ilia Izmailov's Claude Code Plugins
 
 A collection of plugins for [Claude Code](https://claude.ai/code).
 
@@ -20,48 +20,6 @@ Then install any plugin:
 
 ## Available Plugins
 
-### think-through
-
-Deep structured thinking with parallel expert analysis before implementation.
-
-```bash
-/plugin install think-through@ilia-izmailov-plugins
-```
-
-**Usage:**
-```
-/deep-thinking <task or idea>
-```
-
-Breaks down your task into aspects, launches expert agents in parallel (🐙), and produces a comprehensive design document with decisions, trade-offs, and implementation plan.
-
-[Read more →](./plugins/think-through/README.md)
-
----
-
-### vibe-audit
-
-Interactive feature audit for vibe-coded projects. Finds dead code, unused features, and experiments through conversation.
-
-```bash
-/plugin install vibe-audit@ilia-izmailov-plugins
-```
-
-**Usage:**
-```
-/vibe-audit              # Full codebase scan
-/vibe-audit features     # src/features/ deep audit
-/vibe-audit server       # src/server/ routers & services
-/vibe-audit ui           # src/design-system/ components
-/vibe-audit stores       # src/stores/ Zustand state
-```
-
-Scans your codebase for suspicious areas (orphan routes, dead UI, stale code), asks if you need them, and safely removes what you don't — with git backup.
-
-[Read more →](./plugins/vibe-audit/README.md)
-
----
-
 ### agent-teams
 
 Launch a team of AI agents to implement features with built-in code review gates.
@@ -74,12 +32,12 @@ Launch a team of AI agents to implement features with built-in code review gates
 
 **Usage:**
 ```
-/team-feature "Add user settings page"
+/interviewed-team-feature "Add user settings page"
 /team-feature docs/plan.md --coders=2
 /conventions
 ```
 
-Spawns a full team — researchers explore your codebase, coders implement with gold standard examples, 3 specialized reviewers (security, logic, quality) check every change, and a Tech Lead validates architecture. Supports SIMPLE/MEDIUM/COMPLEX complexity with automatic team scaling.
+The main workflow is `/interviewed-team-feature` — a short adaptive interview (2-6 questions) to understand your intent, then automatic launch of the full implementation pipeline. Spawns researchers, coders, and specialized reviewers (security, logic, quality) with automatic team scaling based on complexity (SIMPLE/MEDIUM/COMPLEX).
 
 [Read more →](./plugins/agent-teams/README.md)
 
@@ -104,6 +62,29 @@ Expert debate arena — real experts argue organically and converge on optimal s
 Selects 3-5 real experts with opposing viewpoints, gathers context via researchers, launches organic peer-to-peer debates with live commentary, and synthesizes results into a structured document with verdict and recommendations.
 
 [Read more →](./plugins/expert-arena/README.md)
+
+---
+
+### vibe-audit
+
+Interactive feature audit for vibe-coded projects. Finds dead code, unused features, and experiments through conversation.
+
+```bash
+/plugin install vibe-audit@ilia-izmailov-plugins
+```
+
+**Usage:**
+```
+/vibe-audit              # Full codebase scan
+/vibe-audit features     # src/features/ deep audit
+/vibe-audit server       # src/server/ routers & services
+/vibe-audit ui           # src/design-system/ components
+/vibe-audit stores       # src/stores/ Zustand state
+```
+
+Scans your codebase for suspicious areas (orphan routes, dead UI, stale code), asks if you need them, and safely removes what you don't — with git backup.
+
+[Read more →](./plugins/vibe-audit/README.md)
 
 ---
 

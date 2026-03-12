@@ -35,58 +35,88 @@ Restart Claude Code after enabling.
 ## Usage
 
 ```
-/team-feature <description or path/to/plan.md> [--coders=N]
+/interviewed-team-feature "Add user settings page"
+/team-feature <description or path/to/plan.md> [--coders=N] [--no-research]
 /conventions [path/to/project]
 ```
 
+**`/interviewed-team-feature`** is the recommended entry point — it conducts a short adaptive interview (2-6 questions) to understand your intent, then launches `/team-feature` with a compiled brief.
+
+**`/team-feature`** runs the full implementation pipeline directly — useful when you already have a detailed description or a plan file.
+
+**`/conventions`** analyzes your codebase and creates/updates the `.conventions/` directory with gold standards, anti-patterns, and automated checks.
+
 **Examples:**
 ```
-/team-feature "Add user settings page with profile editing"
+/interviewed-team-feature "Add user settings page with profile editing"
 /team-feature docs/plan.md --coders=2
+/team-feature "Refactor auth to use JWT" --no-research
 /conventions
 ```
 
 ## How It Works
 
+### /interviewed-team-feature
+
+A short adaptive interview before building:
+
+1. Analyzes your request and the codebase
+2. Asks 2-6 targeted questions (scope, audience, success criteria, exclusions)
+3. Compiles a brief with all answers + project context
+4. Launches `/team-feature` with the compiled brief (skipping redundant research)
+
+The number of questions adapts — a vague "improve search" gets more questions than a detailed spec.
+
 ### /team-feature
 
-A Team Lead agent orchestrates the full implementation pipeline. The pipeline adapts based on task complexity — simple tasks get a lightweight flow, complex tasks get the full treatment.
+A Team Lead agent orchestrates the full implementation pipeline. The pipeline adapts based on task complexity.
 
 #### Phase 1: Discovery & Planning
 
-**Step 1 — Parallel Research**
+**Step 1 — Quick Orientation**
 
-Two researcher agents explore your codebase simultaneously:
+Lead reads CLAUDE.md, checks project layout, and loads `.conventions/` gold standards if they exist. Does NOT read source files — that's what researchers are for.
 
-- **Codebase Researcher** scans the project structure, tech stack, patterns, and conventions. Returns a condensed summary so the Lead understands the project without reading hundreds of files.
-- **Reference Researcher** finds the best existing code examples for each layer the feature touches (e.g., an existing API endpoint, a form component, a database migration). Returns **full file contents** — these become few-shot examples for coders.
+**Step 2 — Adaptive Research**
 
-> **Why:** The Lead's context window is precious — it's the brain of the team. Researchers bring back summaries, not raw search results. Meanwhile, reference files become "gold standards" that coders follow, which improves code consistency by 15-40% compared to text instructions alone.
+Research is conditional — skips what's already known:
 
-**Step 2 — Complexity Classification**
+- If a brief from `/interviewed-team-feature` provides project context → skip codebase researcher
+- If `.conventions/` has relevant gold standards → skip reference researcher
+- If `--no-research` flag → skip all research
 
-The Lead evaluates the feature against concrete triggers:
+When needed, two researcher agents explore your codebase in parallel:
 
-| Level | When | What changes |
-|-------|------|-------------|
-| **SIMPLE** | 1 layer, no behavior changes, <3 tasks | Lightweight team (3 agents), single reviewer, no risk analysis |
-| **MEDIUM** | 2+ layers, modifies existing code, 3+ tasks | Full team (4-6 agents), 3 specialized reviewers, risk analysis |
-| **COMPLEX** | 3 layers, touches auth/payments, 5+ tasks | Full team + deep analysis agents, risk testers, user notified on key trade-offs |
+- **Codebase Researcher** scans the project structure, tech stack, patterns, and conventions. Returns a condensed summary.
+- **Reference Researcher** finds the best existing code examples for each layer the feature touches. Returns **full file contents** — these become few-shot examples for coders.
 
-> **Why:** Not every feature needs 8 agents. A simple "add a button" shouldn't go through the same pipeline as "rewrite the auth system". Automatic scaling saves time on small tasks and catches more issues on risky ones.
+Optionally, a **web researcher** is dispatched for features requiring external knowledge (OAuth, real-time, etc.).
 
-**Step 3 — Plan Validation** *(MEDIUM and COMPLEX only)*
+**Step 3 — Complexity Classification**
 
-Tech Lead reviews the task list before any code is written:
-- Are tasks scoped correctly? (one file = one coder, no overlaps)
-- Are dependencies set up right? (task A must finish before task B)
-- Does the approach match existing architecture?
+The Lead evaluates the feature against concrete triggers (not subjective judgment):
 
-> **Why:** Catching a wrong approach at the planning stage costs minutes. Catching it after implementation costs hours. Tech Lead acts as an architectural gatekeeper.
+| Level | Triggers | Team |
+|-------|----------|------|
+| **SIMPLE** | 0-1 medium triggers | Lead + Coder + Unified Reviewer (3 agents) |
+| **MEDIUM** | 2-3 medium triggers, 0 complex triggers | Lead + Tech Lead + 1-3 Reviewers + Coders (4-6 agents) |
+| **COMPLEX** | 4+ medium triggers OR any complex trigger | Lead + 3 Architects + Coders + Risk Testers (5-8+ agents) |
 
-**Step 4 — Risk Analysis** *(MEDIUM and COMPLEX only)*
+**Medium triggers** (6 checks): 2+ layers touched, changes existing behavior, near sensitive areas, 3+ tasks, task dependencies, 5+ files.
 
-Tech Lead identifies what could go wrong, then Risk Testers verify each risk by reading code and running test scripts:
+**Complex triggers** (7 checks): 3 layers simultaneously, changes shared code, direct auth/payments changes, 5+ tasks, 3+ dependent task chain, no gold standard exists, 10+ files.
+
+**Step 4 — Plan Validation**
+
+Depends on complexity:
+
+- **SIMPLE:** Skip validation entirely.
+- **MEDIUM:** Tech Lead reviews the task list — checks scoping, file assignments, dependencies, architectural approach.
+- **COMPLEX:** 3 Architects (Frontend, Backend, Systems) debate the specification before coding starts. See [Architect Debate](#architect-debate-complex-only) below.
+
+**Step 4b — Risk Analysis** *(MEDIUM and COMPLEX only)*
+
+Tech Lead / Primary Architect identifies what could go wrong, then **Risk Testers** verify each risk by reading code and running test scripts:
 
 | Risk Analysis (before code) | Review (after code) |
 |------------------------------|---------------------|
@@ -94,88 +124,82 @@ Tech Lead identifies what could go wrong, then Risk Testers verify each risk by 
 | "Auth middleware won't cover new routes" | "Auth check missing on line 42" |
 | "Two tasks will create conflicting DB columns" | "Column name doesn't match convention" |
 
-> **Why:** Some problems are invisible after implementation — they look correct in code review but break in production. Risk analysis catches architectural and data integrity issues that no amount of code review can find. Prevention > detection.
+Risk Testers are spawned in parallel — one per CRITICAL/MAJOR risk. Confirmed risks are added as mitigation criteria to task descriptions before coding begins.
+
+#### Architect Debate (COMPLEX only)
+
+For complex features, 3 specialized Architects replace the Tech Lead + 3 generic reviewers:
+
+1. **Spawn 3 Architects** — Frontend (UI/components/accessibility), Backend (API/DB/data integrity), Systems (testing/CI/DX)
+2. **Debate phase** — each architect critiques the plan from their expertise, debates with others via direct messaging (max 3 rounds)
+3. **Verification checks** — each architect contributes checks from their domain to the verification plan
+4. **Convergence** — architects send "SPEC APPROVED" with final recommendations
+5. **Primary Architect** designated based on feature type (mostly UI → Frontend, mostly API/DB → Backend, cross-cutting → Systems)
+6. **Review mode** — architects transition to specialized code reviewers during Phase 2
+
+The Primary Architect maintains `DECISIONS.md`, handles escalations, and serves as tiebreaker.
 
 #### Phase 2: Execution
 
-**Step 5 — Coding with Gold Standards**
+**Coders with Gold Standards**
 
-Coders receive their task along with gold standard examples — real files from your project that show "this is how we do things here". Each coder:
+Coders receive their task along with gold standard examples — real files from your project. Each coder:
 
 1. Reads gold standards and reference files
 2. Implements matching the same patterns
-3. Runs self-checks (build, lint, type check)
-4. Requests review
+3. Runs self-checks (build, lint, type check, convention checks)
+4. Sends review requests directly to reviewers via messaging
+5. Fixes feedback, gets approval, commits
 
-> **Why:** Telling an AI "follow project conventions" is vague. Showing it an actual file and saying "match this pattern" produces dramatically more consistent code. Gold standards are the #1 lever for code quality.
+**Specialized Review**
 
-**Step 6 — Convention Checks**
+Coders drive the review process — they message reviewers directly. Lead is NOT in the review loop.
 
-Before reviewers even see the code, Lead runs quick automated checks:
-- File names match expected patterns?
-- New DB columns follow naming conventions?
-- Imports use the right modules?
+**SIMPLE** — one Unified Reviewer covers security basics, logic, and quality in a single pass. Automatically escalates to MEDIUM if code touches sensitive areas.
 
-Failed checks go back to the coder immediately — no reviewer time wasted.
+**MEDIUM** — three permanent reviewers work in parallel:
 
-> **Why:** Reviewers should focus on logic and security, not "you named the file wrong". Convention checks handle the mechanical stuff.
+| Reviewer | What they catch |
+|----------|----------------|
+| **Security** | SQL injection, XSS, auth bypasses, exposed secrets, IDOR |
+| **Logic** | Race conditions, off-by-one errors, null pointer exceptions, async issues |
+| **Quality** | DRY violations, unclear naming, missing abstractions, convention drift |
 
-**Step 7 — Specialized Review**
+**COMPLEX** — the 3 Architects serve as domain-specific reviewers (no separate security/logic/quality reviewers needed).
 
-Depends on complexity:
+**Architectural Approval**
 
-**SIMPLE** — one Unified Reviewer covers security basics, logic, and quality in a single pass. If it detects sensitive code (auth, payments), it automatically escalates to MEDIUM.
+After reviewers finish, Tech Lead (MEDIUM) or Primary Architect (COMPLEX) gives final sign-off on cross-task consistency.
 
-**MEDIUM / COMPLEX** — three permanent reviewers work in parallel:
+#### Phase 3: Completion & Verification
 
-| Reviewer | What they catch | Examples |
-|----------|----------------|----------|
-| **Security** | Vulnerabilities that could be exploited | SQL injection, XSS, auth bypasses, exposed secrets, IDOR |
-| **Logic** | Bugs that produce wrong results | Race conditions, off-by-one errors, null pointer exceptions, async issues |
-| **Quality** | Code that works but is hard to maintain | DRY violations, unclear naming, missing abstractions, convention drift |
+**Step 1 — Conventions Update**
 
-Each reviewer sends findings directly to the coder — the coder fixes, re-submits, cycle repeats until clean.
+A dedicated conventions task (blocked by all coding tasks) creates/updates `.conventions/` with patterns discovered during implementation, recurring review issues, and approved deviations.
 
-**COMPLEX** additionally triggers deep analysis agents when code touches sensitive areas:
-- Auth/payments code → Security + Business Logic deep analysis
-- Database code → Database Integrity analysis (race conditions, N+1 queries)
-- External API calls → External Systems analysis (missing timeouts, retry logic)
+**Step 2 — Integrated Verification**
 
-> **Why:** Three specialized reviewers catch different classes of problems. A security expert misses naming issues; a quality expert misses race conditions. Specialization means deeper analysis in each area. Deep analysis agents go even further — they find semantic issues that surface-level review misses.
+Verification runs **before** shutting down the team, so coders can fix failures:
 
-**Step 8 — Architectural Approval**
+1. Three verifier agents run in parallel:
+   - **CI Verifier** — build, typecheck, tests
+   - **Browser Verifier** — pages load, elements visible, interactions work, no console errors
+   - **Spec Verifier** — file existence, exports, API responses, config values
 
-After reviewers finish, Tech Lead gives the final sign-off:
-- Does this change fit the overall architecture?
-- Is it consistent with what other coders implemented in earlier tasks?
-- Any cross-task conflicts?
+2. **Fix-verify loop** — if checks fail, coders fix while the team is still alive (max 3 iterations)
 
-Only after Tech Lead approval does the coder commit.
+3. **Status taxonomy:**
+   - PASS / FAIL (code problem) / SKIP (capability or n/a) / UNCLEAR / DEGRADED (agent crashed) / BROKEN (environment issue)
 
-> **Why:** Reviewers check individual files. Tech Lead checks the big picture — how changes across multiple tasks fit together. This prevents "each piece looks fine but they don't work together" problems.
+4. **Verification manifest** — integrity audit comparing items sent vs reported
 
-#### Phase 3: Completion
+5. Items that can't be auto-verified are collected as **Human Checks** and presented to the user after completion.
 
-**Step 9 — Integration Verification**
-
-Lead runs build + full test suite. If anything fails → creates a targeted fix task that goes through the same review pipeline.
-
-> **Why:** Individual tasks can pass their own checks but break when combined. Integration testing is the final safety net.
-
-**Step 10 — Conventions Update**
-
-A dedicated task (blocked by all others) updates `.conventions/` with:
-- Patterns this feature introduced
-- Issues reviewers flagged 2+ times (= missing convention)
-- Approved deviations from existing patterns
-
-> **Why:** Every feature teaches the team something. Capturing it in `.conventions/` means the next `/team-feature` run starts with better gold standards. The system improves over time.
-
-**Step 11 — Summary Report**
+**Step 3 — Summary Report**
 
 ```
 ══════════════════════════════════════════════════
-FEATURE IMPLEMENTATION COMPLETE
+FEATURE COMPLETE — VERIFIED
 ══════════════════════════════════════════════════
 Tasks completed: 4/4
 Complexity: MEDIUM
@@ -183,8 +207,8 @@ Commits: [list]
 
 Risk analysis: 3 risks identified, 1 confirmed & mitigated
 Review stats: 2 security, 1 logic, 3 quality issues fixed
-Integration: Build ✅ Tests ✅
-Conventions: 2 gold standards added
+Verification: 12/14 passed, 2 human checks
+Conventions: .conventions/ updated ✅
 ══════════════════════════════════════════════════
 ```
 
@@ -197,30 +221,36 @@ Analyzes your codebase and creates/updates `.conventions/` directory with:
 - `anti-patterns/` — what NOT to do
 - `checks/` — naming rules, import patterns
 
-These conventions are used by `/team-feature` as few-shot examples for coders. You can also run `/conventions` standalone to bootstrap conventions for any project.
+These conventions are used by `/team-feature` as few-shot examples for coders. Run `/conventions` standalone to bootstrap conventions for any project.
 
-## Complexity Levels
+## Key Artifacts
 
-| Level | Team Size | Reviewers | Risk Analysis | Tech Lead Validation |
-|-------|-----------|-----------|---------------|---------------------|
-| **SIMPLE** | 3 agents | 1 unified | Skipped | Skipped |
-| **MEDIUM** | 4-6 agents | 3 specialized | Yes | Yes |
-| **COMPLEX** | 5-8+ agents | 3 specialized + deep analysis | Full + risk testers | Yes + user notified on key decisions |
+| Artifact | Created by | Purpose |
+|----------|-----------|---------|
+| `.conventions/` | Conventions task | Gold standards, anti-patterns, automated checks for future runs |
+| `DECISIONS.md` | Tech Lead / Primary Architect | Architectural decisions, approved deviations, debate summary |
+| `VERIFICATION_PLAN.md` | Lead / Architects | Checklist of automated and manual checks |
+| `VERIFICATION_REPORT.md` | Verification phase | Detailed results with pass/fail/skip per check |
+| `state.md` | Lead | Team state for compaction recovery |
 
 ## Team Roles
 
 | Role | Lifetime | Purpose |
 |------|----------|---------|
-| **Lead** | Whole session | Orchestrates the pipeline, protects own context by delegating research |
+| **Lead** | Whole session | Orchestrates pipeline, dispatches researchers, monitors progress |
 | **Codebase Researcher** | One-shot | Returns condensed project summary (structure, stack, patterns) |
 | **Reference Researcher** | One-shot | Returns full content of best example files for each layer |
-| **Tech Lead** | Permanent | Validates plan, reviews architecture, handles escalations, maintains DECISIONS.md |
-| **Coder** | Per task | Implements matching gold standard patterns, self-checks before review |
-| **Security Reviewer** | Permanent | Injection, XSS, auth bypasses, secrets exposure, IDOR |
-| **Logic Reviewer** | Permanent | Race conditions, edge cases, null handling, async issues |
-| **Quality Reviewer** | Permanent | DRY, naming, abstractions, convention compliance |
-| **Unified Reviewer** | Permanent | All-in-one for SIMPLE tasks; escalates to 3 reviewers if needed |
+| **Tech Lead** | Permanent (MEDIUM) | Validates plan, architectural review, maintains DECISIONS.md |
+| **Architect** | Permanent (COMPLEX) | Debates spec, then reviews code in domain. 3 personas: Frontend, Backend, Systems |
+| **Coder** | Per task | Implements matching gold standards, self-checks, requests review directly |
+| **Security Reviewer** | Permanent (MEDIUM) | Injection, XSS, auth bypasses, IDOR, secrets |
+| **Logic Reviewer** | Permanent (MEDIUM) | Race conditions, edge cases, null handling, async |
+| **Quality Reviewer** | Permanent (MEDIUM) | DRY, naming, abstractions, convention compliance |
+| **Unified Reviewer** | Permanent (SIMPLE) | All-in-one reviewer; escalates to 3 reviewers if needed |
 | **Risk Tester** | One-shot | Verifies specific risks by reading code and running test scripts |
+| **CI Verifier** | One-shot | Runs build, typecheck, lint, tests — reports PASS/FAIL/BROKEN |
+| **Browser Verifier** | One-shot | Navigates pages, checks elements and interactions via Chrome |
+| **Spec Verifier** | One-shot | Checks file existence, exports, API responses, config values |
 
 ## Structure
 
@@ -228,22 +258,32 @@ These conventions are used by `/team-feature` as few-shot examples for coders. Y
 agent-teams/
 ├── .claude-plugin/
 │   └── plugin.json
-├── commands/
-│   ├── team-feature.md
-│   └── conventions.md
 ├── agents/
+│   ├── architect.md
+│   ├── browser-verifier.md
+│   ├── ci-verifier.md
 │   ├── codebase-researcher.md
-│   ├── reference-researcher.md
-│   ├── tech-lead.md
 │   ├── coder.md
-│   ├── security-reviewer.md
 │   ├── logic-reviewer.md
 │   ├── quality-reviewer.md
-│   ├── unified-reviewer.md
-│   └── risk-tester.md
+│   ├── reference-researcher.md
+│   ├── risk-tester.md
+│   ├── security-reviewer.md
+│   ├── spec-verifier.md
+│   ├── tech-lead.md
+│   └── unified-reviewer.md
 ├── references/
 │   ├── gold-standard-template.md
 │   └── risk-testing-example.md
+├── skills/
+│   ├── conventions/
+│   │   └── SKILL.md
+│   ├── interviewed-team-feature/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       └── interview-principles.md
+│   └── team-feature/
+│       └── SKILL.md
 └── README.md
 ```
 
