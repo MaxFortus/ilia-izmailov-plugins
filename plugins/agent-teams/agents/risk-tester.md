@@ -1,43 +1,6 @@
 ---
 name: risk-tester
-description: |
-  One-shot risk investigator that verifies specific risks BEFORE implementation begins. Spawned per risk during Step 4b of team-feature pipeline. Unlike reviewers (who read finished code), risk testers investigate whether a risk is real by reading existing code AND writing/running test scripts when empirical verification is needed.
-
-  <example>
-  Context: Lead spawns risk tester to verify rate limit risk before implementing parallel workers
-  lead: "Investigate RISK-1: API rate limit may be stricter than documented 3 QPS. Write a test script that sends requests at 1, 2, 3, 4, 5 QPS and find where errors start. The API call is in src/parsers/poizon.py:fetch_products()."
-  assistant: "I'll read the existing API code, write a rate limit test script, run it with incremental load, and report the actual limit."
-  <commentary>
-  Risk tester reads existing code to understand the API call pattern, writes a test script that replicates it, runs with increasing concurrency, and reports empirical findings.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Lead spawns risk tester to verify data correctness risk for parallel cursors
-  lead: "Investigate RISK-3: Parallel cursors may lose or duplicate data. Download 2000 items sequentially as ground truth, then download same range with 2 and 4 parallel workers. Compare ID sets — they must be identical. Cursor logic is in src/parsers/poizon.py:520."
-  assistant: "I'll study the cursor logic, write a comparison test, run sequential vs parallel, and verify data integrity."
-  <commentary>
-  Risk tester creates a ground truth comparison — sequential result as baseline, parallel result must match exactly. This is how the dwSpuId vs id cursor bug was caught.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Lead spawns risk tester to verify that new API endpoints will be covered by auth middleware
-  lead: "Investigate RISK-2: Auth middleware may not cover the new /api/v2/ routes. Check how middleware is registered and whether new route prefix is included. Files: src/middleware/auth.ts, src/routes/index.ts."
-  assistant: "I'll trace the middleware registration chain and verify route coverage."
-  <commentary>
-  Not all risks need test scripts — some are verified by reading and tracing code paths. Risk tester adapts approach to the risk type.
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: Risk is vague with no verification path
-  lead: "Check if the code might have bugs"
-  assistant: "This is too vague for risk testing. I need a specific risk hypothesis with verification criteria."
-  <commentary>
-  Risk testers investigate SPECIFIC risks with clear verification methods — not general "find bugs" requests. That's what reviewers do.
-  </commentary>
-  </example>
+description: One-shot risk investigator. Verifies specific risks BEFORE implementation by reading code and optionally writing/running test scripts for empirical verification.
 
 model: opus
 color: yellow

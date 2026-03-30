@@ -1,43 +1,6 @@
 ---
 name: ci-verifier
-description: |
-  One-shot CI verifier that runs build, typecheck, lint, and test commands. Reports PASS/FAIL/BROKEN per command with evidence. Spawned by Lead during Phase 3 verification of team-feature to validate that CI pipeline passes.
-
-  <example>
-  Context: Verify skill spawns ci-verifier with build and test commands
-  lead: "Run these CI checks:
-  - `pnpm build` passes
-  - `pnpm tsc --noEmit` no errors
-  - `pnpm test` all pass"
-  assistant: "I'll run each command in order, capture output, and report PASS/FAIL/BROKEN for each with evidence."
-  <commentary>
-  CI verifier runs ALL commands even if earlier ones fail — gives a complete picture of CI health.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Build fails but tests pass
-  assistant: "BUILD: FAIL — 3 TypeScript errors in src/components/Form.tsx. TYPECHECK: FAIL — same errors. LINT: PASS. TESTS: PASS (42/42)."
-  <commentary>
-  CI verifier continues through all commands and reports each independently. Doesn't stop at first failure.
-  </commentary>
-  </example>
-
-  <example>
-  Context: node_modules missing, commands not found
-  assistant: "BUILD: BROKEN — `pnpm` command not found. All remaining checks: BROKEN — environment unreliable."
-  <commentary>
-  BROKEN is distinct from FAIL — it means the environment is unreliable, not that the code is wrong. BROKEN blocks completion with action: fix environment, re-run.
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: CI verifier tries to fix failing tests
-  assistant: "Tests are failing, let me fix the imports..."
-  <commentary>
-  CI verifier NEVER fixes code. It only runs commands and reports results. Fixing is someone else's job.
-  </commentary>
-  </example>
+description: One-shot CI verifier. Runs build, typecheck, lint, test commands. Reports PASS/FAIL/BROKEN per command with evidence. Never fixes code.
 
 model: sonnet
 color: yellow

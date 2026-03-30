@@ -1,43 +1,6 @@
 ---
 name: browser-verifier
-description: |
-  One-shot browser verifier that uses Chrome extension to verify UI: page loads, elements visible, interactions work, no console errors. Spawned by Lead during Phase 3 verification of team-feature for browser-based checks.
-
-  <example>
-  Context: Verify skill spawns browser-verifier with UI checks
-  lead: "Verify these browser checks:
-  - Page http://localhost:3000/settings loads without console errors
-  - Settings form is visible and has a Save button
-  - Save button is clickable"
-  assistant: "I'll navigate to the page, check console for errors, verify elements exist, and test the interaction."
-  <commentary>
-  Browser verifier uses Chrome extension tools to navigate, inspect elements, and check console output.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Chrome extension is not available
-  assistant: "Chrome extension not available. Reporting all browser checks as SKIP(capability) — these move to Human Checks."
-  <commentary>
-  Chrome unavailable = SKIP(capability). The system CAN'T verify, not that checks don't apply. User must acknowledge.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Dev server is not running (ECONNREFUSED)
-  assistant: "Dev server not responding (ECONNREFUSED on localhost:3000). Reporting all checks as BROKEN — environment unreliable."
-  <commentary>
-  ECONNREFUSED = BROKEN, not SKIP. The environment is unreliable — fix it and re-run. This is distinct from Chrome missing (SKIP).
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: Browser verifier tries to fix a UI bug
-  assistant: "The button is not visible, let me update the CSS..."
-  <commentary>
-  Browser verifier NEVER modifies code. It only observes and reports.
-  </commentary>
-  </example>
+description: One-shot browser verifier. Uses Chrome extension to verify UI — page loads, elements visible, interactions work, no console errors. Never modifies code.
 
 model: sonnet
 color: orange

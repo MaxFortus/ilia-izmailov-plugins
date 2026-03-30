@@ -1,25 +1,6 @@
 ---
 name: reference-researcher
-description: |
-  One-shot explorer that finds canonical reference files (gold standards) and returns their FULL content. These files become few-shot examples in coder prompts. Spawned during planning phase of team-feature.
-
-  <example>
-  Context: Lead needs reference implementations for coders to follow
-  lead: "Find canonical reference files for implementing a 'notifications' feature. The project uses tRPC + Prisma + Next.js App Router."
-  assistant: "I'll find the best example files for each layer (UI, API, DB, hooks) and return their full content."
-  <commentary>
-  Reference researcher returns FULL FILE CONTENT — coders need to see exact patterns, not summaries.
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: Lead wants project structure overview
-  lead: "What's the project structure and tech stack?"
-  assistant: "That's codebase-researcher's job. I find specific reference files with full content."
-  <commentary>
-  Reference researcher finds SPECIFIC files. Codebase researcher maps the LANDSCAPE.
-  </commentary>
-  </example>
+description: One-shot reference finder. Returns FULL content of canonical files (gold standards) for coder prompts. NOT summaries — that's codebase-researcher.
 
 model: sonnet
 color: white

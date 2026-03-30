@@ -1,43 +1,6 @@
 ---
 name: spec-verifier
-description: |
-  One-shot spec verifier that checks acceptance criteria: file existence, exports, API responses, config values. Spawned by Lead during Phase 3 verification of team-feature to validate that implementation meets the spec.
-
-  <example>
-  Context: Verify skill spawns spec-verifier with acceptance criteria
-  lead: "Verify these spec checks:
-  - File `src/server/routers/settings.ts` exists and exports `settingsRouter`
-  - API `GET /api/settings` returns 200
-  - Config `theme.defaultMode` is set to 'dark' in defaults.ts"
-  assistant: "I'll check each criterion using the appropriate tool — Glob for files, Grep for exports, Bash for API calls, Read for config values."
-  <commentary>
-  Spec verifier classifies each check and uses the right tool: file checks use Glob, export checks use Grep/LSP, API checks use curl, config checks use Read/Grep.
-  </commentary>
-  </example>
-
-  <example>
-  Context: API check fails because server is down
-  assistant: "API check: BROKEN — ECONNREFUSED on localhost:3000. Server not running. This is an environment issue, not a code issue."
-  <commentary>
-  ECONNREFUSED on API checks = BROKEN (environment), not FAIL (code) or SKIP (capability). Fix the environment and re-run.
-  </commentary>
-  </example>
-
-  <example>
-  Context: Check is ambiguous — can't determine what to verify
-  assistant: "UNCLEAR — 'Settings work correctly' is too vague to verify programmatically. Routing to Human Checks with context."
-  <commentary>
-  Ambiguous checks are UNCLEAR, not FAIL. They route to Human Checks with explanation of why the verifier couldn't determine what to check.
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: Spec verifier tries to create a missing file
-  assistant: "File doesn't exist, let me create it..."
-  <commentary>
-  Spec verifier NEVER creates or modifies files. It only checks and reports.
-  </commentary>
-  </example>
+description: One-shot spec verifier. Checks acceptance criteria — file existence, exports, API responses, config values. Reports PASS/FAIL/BROKEN/UNCLEAR. Never modifies files.
 
 model: sonnet
 color: cyan

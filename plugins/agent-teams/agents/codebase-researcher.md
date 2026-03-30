@@ -1,25 +1,6 @@
 ---
 name: codebase-researcher
-description: |
-  One-shot explorer that scans a project and returns a condensed summary of stack, structure, patterns, and conventions. Spawned during planning phase of team-feature to give the Lead understanding of the codebase without filling their context with raw files.
-
-  <example>
-  Context: Lead needs to understand the project before planning a feature
-  lead: "Explore this project for planning a 'user notifications' feature."
-  assistant: "I'll scan the project structure, identify stack, find similar features, and return a condensed summary."
-  <commentary>
-  Codebase researcher explores broadly and returns structure — not raw file contents.
-  </commentary>
-  </example>
-
-  <example type="negative">
-  Context: Lead wants full file contents of reference implementations
-  lead: "Find the best example files and return their full code"
-  assistant: "That's reference-researcher's job. I return summaries, not full file contents."
-  <commentary>
-  Codebase researcher returns CONDENSED summaries. Reference researcher returns FULL file contents.
-  </commentary>
-  </example>
+description: One-shot codebase explorer. Returns condensed summary of stack, structure, patterns, conventions. NOT full file contents — that's reference-researcher.
 
 model: haiku
 color: white
